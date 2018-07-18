@@ -9,7 +9,8 @@ namespace PokesYou.Renderer {
         Y = 2,
         Both = X | Y,
     }
-
+    
+    public delegate void OnFocusChangeEventHandler (object sender, bool lost);
     /// <summary>
     /// Defines an interface for renderers.
     /// This also handles part of the input.
@@ -38,11 +39,20 @@ namespace PokesYou.Renderer {
         string WindowTitle { get; set; }
         #endregion
 
+        #region Events
+        event OnFocusChangeEventHandler OnFocusChange;
+        #endregion
+
         #region Functions
         /// <summary>
         /// Initializes the renderer
         /// </summary>
         void Initialize (int width, int height, bool fullscreen);
+        /// <summary>
+        /// Is the renderer usable?
+        /// </summary>
+        /// <returns></returns>
+        bool IsUsable ();
         /// <summary>
         /// Renders the game
         /// </summary>

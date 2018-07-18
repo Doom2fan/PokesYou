@@ -19,7 +19,7 @@ namespace PokesYou.G_Console {
         SaveDemo = 1 << 4,
         /// <summary>Don't save to savegame</summary>
         NoSave = 1 << 5,
-        /// <summary>Save changes until server restarts (e.g. a new game is started)</summary>
+        /// <summary>Don't change until server restarts (e.g. a new game is started)</summary>
         Latch = 1 << 6,
     }
 

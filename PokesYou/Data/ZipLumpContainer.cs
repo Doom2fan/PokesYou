@@ -128,7 +128,7 @@ namespace PokesYou.Data {
                     using (var stream = zip.GetInputStream (zip [i]))
                         StreamUtils.ReadFully (stream, buffer);
 
-                    return new Lump (buffer);
+                    return new Lump (zip [i].Name.Replace ('\\', '/'), buffer);
                 }
             }
 
@@ -140,14 +140,15 @@ namespace PokesYou.Data {
         /// <param name="filePath">The path to the file</param>
         /// <returns>A Lump with the file's data -or- null if the specified path does not exist or is not a file.</returns>
         public Lump GetLumpFullPath (string file) {
+            file = file.Replace ('\\', '/');
             for (int i = 0; i < zip.Count; i++) {
-                if (string.Compare (file, zip [i].Name, StringComparison.OrdinalIgnoreCase) == 0 && zip [i].IsFile) {
+                if (string.Compare (file, zip [i].Name.Replace ('\\', '/'), StringComparison.OrdinalIgnoreCase) == 0 && zip [i].IsFile) {
                     byte [] buffer = new byte [zip [i].Size];
 
                     using (var stream = zip.GetInputStream (zip [i]))
                         StreamUtils.ReadFully (stream, buffer);
 
-                    return new Lump (buffer);
+                    return new Lump (zip [i].Name.Replace ('\\', '/'), buffer);
                 }
             }
 

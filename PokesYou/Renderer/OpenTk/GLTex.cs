@@ -3,6 +3,7 @@ using PokesYou.Data;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
 
 namespace PokesYou.Renderer.OpenTk {
     public static class GLTexManager {
@@ -23,6 +24,24 @@ namespace PokesYou.Renderer.OpenTk {
             GLTex gltex = GLTex.CreateGLTex (tex);
             textures.Add (tex, gltex);
             return gltex;
+        }
+
+        public static bool DeleteTex (Texture tex) {
+            if (textures.ContainsKey (tex)) {
+                textures [tex].Delete ();
+                textures.Remove (tex);
+                return true;
+            } else
+                return false;
+        }
+
+        public static bool DeleteTex (GLTex tex) {
+            if (textures.ContainsValue (tex) && textures.ContainsKey (tex.Data)) {
+                tex.Delete ();
+                textures.Remove (tex.Data);
+                return true;
+            } else
+                return false;
         }
     }
 
@@ -52,11 +71,28 @@ namespace PokesYou.Renderer.OpenTk {
             bmp.UnlockBits (bmpData);
             bmpData = null;
 
+            GL.TexParameter (TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int) TextureWrapMode.Repeat);
+            GL.TexParameter (TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int) TextureWrapMode.Repeat);
             GL.TexParameter (TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int) TextureMinFilter.NearestMipmapLinear);
             GL.TexParameter (TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int) TextureMagFilter.Nearest);
             GL.GenerateMipmap (GenerateMipmapTarget.Texture2D);
 
             return new GLTex (tex, idx);
+        }
+
+        /// <summary>
+        /// Binds the texure for use.
+        /// </summary>
+        public void Bind () {
+            GL.BindTexture (TextureTarget.Texture2D, Id);
+        }
+
+        /// <summary>
+        /// Deletes the texture.
+        /// Do not use this directly. Use GLTexManager.DeleteTex instead.
+        /// </summary>
+        public void Delete () {
+            GL.DeleteTexture (Id);
         }
     }
 }

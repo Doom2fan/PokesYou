@@ -77,6 +77,8 @@ namespace PokesYou.Game {
         }
 
         public void Update (long ticDelta) {
+            GameState.GameTic++;
+
             LocalPlayer.ControlInterface.PrevButtons = Input.PrevButtons;
             LocalPlayer.ControlInterface.Buttons = Input.Buttons;
             LocalPlayer.ControlInterface.ForwardMove = new Accum (Input.ForwardMove);

@@ -82,9 +82,8 @@ namespace PokesYou {
         }
 
         public static void Run (string [] args) {
-            long ticDelta = 0, renderDelta = 0,
-                lastFPSTime = 0, fpsTime = 0,
-                fpsCount = 0, curFpsCount = 0;
+            long ticDelta = 0, renderDelta = 0;
+            double fpsTime, estimatedFPS = 0;
 
             if (Closing)
                 return;
@@ -96,6 +95,30 @@ namespace PokesYou {
             }
 
             try {
+                Data.UDMF.UDMFParser udmfParser = new Data.UDMF.UDMFParser ();
+                udmfParser.Setup ();
+
+                using (var reader = new StreamReader ("TEXTMAP.txt"))
+                    udmfParser.Parse (reader);
+
+                Console.ReadKey ();
+                return;
+
+                GConsole.WriteLine ("Core: Loading engine.PK3");
+                ZipLumpContainer container = null;
+                string engPK3File = Path.GetFullPath (Path.Combine (Constants.ProgDir, @"engine.pk3"));
+
+                if (File.Exists (engPK3File)) {
+                    if (ZipLumpContainer.CheckContainer (engPK3File))
+                        container = new ZipLumpContainer (engPK3File);
+                }
+
+                if (container == null)
+                    throw new FatalError (String.Format ("Could not load engine.PK3. Stopping execution."));
+
+                GConsole.WriteLine (" engine.PK3, {0} lumps", container.Count);
+                LumpManager.AddContainer (container);
+
                 GConsole.WriteLine ("Core: Initializing patches");
                 InitPatches ();
 
@@ -103,10 +126,11 @@ namespace PokesYou {
                 FixedMath.GenerateTables ();
 
                 GConsole.WriteLine ("Core: Initializing video");
-                renderer = new OpenTkRenderer (800, 600, GraphicsMode.Default, "PokesYou", GameWindowFlags.Default, DisplayDevice.Default, 3, 0, GraphicsContextFlags.Default);
+                renderer = OpenTkRenderer.Default;
                 renderer.Initialize (800, 600, false);
+                renderer.OnFocusChange += Renderer_OnFocusChange;
 
-                GConsole.WriteLine ("Core: Initializing ticker");
+                GConsole.WriteLine ("Core: Initializing playsim");
                 game = new Ticker ();
                 game.Initialize ();
 
@@ -115,36 +139,28 @@ namespace PokesYou {
                 ticClock.Start ();
                 renderClock.Reset ();
                 renderClock.Start ();
-                fpsClock.Start ();
 
                 while (true) {
                     if (Closing)
                         return;
+
                     if (ticClock.ElapsedMilliseconds >= Constants.MsecsPerTic) {
                         ticDelta = ticClock.ElapsedMilliseconds;
                         ticClock.Restart ();
                         game.Update (ticDelta);
                         Input.ClearTotals ();
                     }
-                    if (fpsClock.ElapsedMilliseconds >= 1000) {
-                        curFpsCount = fpsCount;
-                        fpsCount = 0;
-                        lastFPSTime = fpsTime = 0;
-                        fpsClock.Restart ();
-                    }
-                    if (Input.IsMouseGrabbed != true)
-                        Input.GrabMouse ();
                     Input.UpdateInput ();
 
                     renderDelta = renderClock.ElapsedMilliseconds;
                     renderClock.Restart ();
 
-                    lastFPSTime = fpsTime;
-                    fpsTime = fpsClock.ElapsedMilliseconds;
+                    fpsClock.Restart ();
                     renderer.Render (renderDelta);
-                    fpsCount++;
+                    fpsTime = fpsClock.ElapsedMilliseconds;
 
-                    //renderer.WindowTitle = String.Format ("FPS: {0} ms ({1})", fpsTime - lastFPSTime, curFpsCount);
+                    if (renderer.IsUsable ())
+                        renderer.WindowTitle = String.Format ("Frame time: {0} ms", fpsTime);
                 }
             } catch (FatalError err) {
                 DisposeResources ();
@@ -155,6 +171,10 @@ namespace PokesYou {
                 GConsole.WriteLine (err.Message);
                 Console.ReadKey ();
             }
+        }
+
+        private static void Renderer_OnFocusChange (object sender, bool lost) {
+            GameState.IsFocused = !lost;
         }
     }
 }

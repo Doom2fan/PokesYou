@@ -126,6 +126,15 @@ namespace PokesYou.Game {
         /// Updates the input state
         /// </summary>
         public static void UpdateInput () {
+            if (!GameState.IsFocused) {
+                if (mouseGrabbed)
+                    ReleaseMouse ();
+                return;
+            }
+
+            if (!mouseGrabbed)
+                GrabMouse ();
+
             mStatePrev = mState;
             kbState = Core.RenderEngine.GetKeyboardState ();
             mState = Core.RenderEngine.GetMouseState ();

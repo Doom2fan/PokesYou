@@ -1,4 +1,5 @@
 ﻿using OpenTK;
+using PokesYou.G_Console;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
@@ -7,12 +8,14 @@ using PokesYou.Renderer.OpenTk.Internal;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using PokesYou.CMath;
 
 namespace PokesYou.Renderer.OpenTk {
     public class OpenTkRenderer : GameWindow, IRenderEngine {
-        public static readonly OpenTkRenderer Default = new OpenTkRenderer (800, 600, GraphicsMode.Default, "PokesYou", GameWindowFlags.Default, DisplayDevice.Default, 3, 0, GraphicsContextFlags.Default);
-        
+        public static readonly OpenTkRenderer Default = new OpenTkRenderer (800, 600, GraphicsMode.Default, "PokesYou", GameWindowFlags.Default, DisplayDevice.Default, 3, 1, GraphicsContextFlags.ForwardCompatible);
+
         protected internal Camera localCamera { get; set; }
+        Matrix4 projectionMatrix;
 
         protected bool IsInitialized = false;
 
@@ -35,17 +38,23 @@ namespace PokesYou.Renderer.OpenTk {
         #endregion
 
         #region Event handlers
+        public event OnFocusChangeEventHandler OnFocusChange;
+
         protected void OpenTkRenderer_Closing (object sender, System.ComponentModel.CancelEventArgs e) {
             if (!e.Cancel) {
                 Dispose ();
                 Core.Exit ();
             }
         }
+
+        private void OpenTkRenderer_FocusedChanged (object sender, EventArgs e) {
+            OnFocusChange?.Invoke (this, !this.Focused);
+        }
         #endregion
 
         public OpenTkRenderer (int width, int height, GraphicsMode mode, string title, GameWindowFlags options, DisplayDevice device, int major, int minor, GraphicsContextFlags flags)
             : base (width, height, mode, title, options, device, major, minor, flags) {
-            
+
         }
 
         #region Private functions
@@ -62,13 +71,18 @@ namespace PokesYou.Renderer.OpenTk {
             this.WindowState = fullscreen ? WindowState.Fullscreen : 0;
             this.Visible = true;
             this.Closing += OpenTkRenderer_Closing;
+            this.FocusedChanged += OpenTkRenderer_FocusedChanged;
             this.IsInitialized = true;
             this.VSync = VSyncMode.Off;
-            
+
             OnLoad (EventArgs.Empty);
             OnResize (EventArgs.Empty);
         }
 
+        public bool IsUsable () { return IsInitialized && !IsDisposed; }
+
+        Shader shader;
+        Model nanosuit;
         protected override void OnLoad (EventArgs e) {
             base.OnLoad (e);
 
@@ -81,27 +95,23 @@ namespace PokesYou.Renderer.OpenTk {
 
             GL.Enable (EnableCap.DepthTest); // Enable capabilities
             GL.Enable (EnableCap.AlphaTest);
-            GL.Enable (EnableCap.CullFace);
+            //GL.Enable (EnableCap.CullFace);
             GL.Enable (EnableCap.Blend);
             // Enable lighting
-            GL.Enable (EnableCap.Lighting);
-            GL.Enable (EnableCap.Light0);
-            GL.ShadeModel (ShadingModel.Smooth);
+            //GL.Enable (EnableCap.Lighting);
+            //GL.Enable (EnableCap.Texture2D);
 
-            Vector4 ambient = new Vector4 (0.2f, 0.2f, 0.2f, 1.0f);
-            Vector4 diffuse = new Vector4 (0.5f, 0.5f, 0.5f, 1.0f);
-            Vector4 specular = new Vector4 (0.8f, 0.8f, 0.8f, 1.0f);
-            GL.Light (LightName.Light0, LightParameter.Ambient, ambient);
-            GL.Light (LightName.Light0, LightParameter.Diffuse, diffuse);
-            GL.Light (LightName.Light0, LightParameter.Specular, specular);
+
+            ///shader = new Shader (@"Shaders\GLSL\default.vert", @"Shaders\GLSL\default.frag");
+            shader = new Shader (@"Shaders\GLSL\test.vert", @"Shaders\GLSL\test.frag");
+
+            nanosuit = Model.LoadModel (@"models\nanosuit.obj");
         }
 
         protected override void OnResize (EventArgs e) {
             base.OnResize (e);
 
-            Matrix4 perspective = Matrix4.CreatePerspectiveFieldOfView (MathHelper.PiOver4, (float) (Width / (double) Height), 1, 1 << 16);
-            GL.MatrixMode (MatrixMode.Projection);
-            GL.LoadMatrix (ref perspective);
+            projectionMatrix = Matrix4.CreatePerspectiveFieldOfView (MathHelper.DegreesToRadians (90), (float) (Width / (double) Height), 0.1f, (float) (1 << 24));
 
             GL.Viewport (0, 0, Width, Height);
         }
@@ -125,19 +135,41 @@ namespace PokesYou.Renderer.OpenTk {
             this.MakeCurrent ();
 
             GL.Clear (ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            
+            shader.Use ();
+            
+            Vector3 cameraPos = localCamera.Position.ToGLVec3 ();
 
-            GL.MatrixMode (MatrixMode.Modelview);
-            GL.LoadIdentity ();
-            GL.Rotate ((double) -localCamera.Pitch, 1, 0, 0);
-            GL.Rotate ((double) -localCamera.Angle, 0, 1, 0);
-            GL.Translate ((double) -localCamera.Position.X, (double) -(localCamera.Position.Z + localCamera.ViewHeight), (double) localCamera.Position.Y);
+            float yaw = MathHelper.DegreesToRadians ((float) localCamera.Angle), pitch = MathHelper.DegreesToRadians (MathHelper.Clamp ((float) localCamera.Pitch, -89.9f, 89.9f));
+            Matrix4 cameraFrontMatrix = Matrix4.Identity;
+            cameraFrontMatrix *= Matrix4.CreateRotationZ (pitch);
+            cameraFrontMatrix *= Matrix4.CreateRotationY (yaw);
 
-            // Position the light.
-            /*Vector4 position = new Vector4 (0.0f, 25.0f, 0.0f, 1.0f);
-            GL.Light (LightName.Light0, LightParameter.Position, position);*/
+            Vector3 cameraFront = Vector3.Transform (new Vector3 (1.0f, 0.0f, 0.0f), cameraFrontMatrix).Normalized ();
+            Vector3 cameraUp = new Vector3 (0.0f, 1.0f, 0.0f);
+            Matrix4 view = Matrix4.LookAt (cameraPos, cameraPos + cameraFront, cameraUp);
+            
+            Matrix4 model = Matrix4.Identity;
+            model *= Matrix4.CreateTranslation (0.0f, 0.0f, 2.0f);
+            model *= Matrix4.CreateScale (0.25f, 0.25f, 0.25f);
 
-            this.ProcessGeometry ();
-            this.ProcessActors ();
+            shader.Use ();
+            shader.SetMatrix ("ViewMatrix", view, false);
+            shader.SetMatrix ("ProjectionMatrix", projectionMatrix, false);
+            shader.SetMatrix ("ViewMatrix", model, false);
+
+            shader.SetVector3 ("uCameraPos", cameraPos);
+            shader.SetVector3 ("uCameraDir", cameraFront);
+
+            shader.SetVector3 ("dirLight.direction", -0.2f, -1.0f, -0.3f);
+            shader.SetVector3 ("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+            shader.SetVector3 ("dirLight.diffuse",  0.4f,  0.4f,  0.4f);
+            shader.SetVector3 ("dirLight.specular", 0.5f,  0.5f,  0.5f);
+
+            nanosuit.Draw (shader);
+
+            /*this.ProcessGeometry ();
+            this.ProcessActors ();*/
 
             this.SwapBuffers ();
         }

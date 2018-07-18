@@ -14,7 +14,7 @@ namespace PokesYou.CMath {
         /// <param name="z"></param>
         /// <returns></returns>
         public static Vector3 GLVec3 (float x, float y, float z) {
-            return new Vector3 (x, z, -y);
+            return new Vector3 (y, z, x);
         }
         /// <summary>
         /// Converts correct XYZ coordinates to OpenGL's stupid format
@@ -24,7 +24,7 @@ namespace PokesYou.CMath {
         /// <param name="z"></param>
         /// <returns></returns>
         public static Vector3d GLVec3d (double x, double y, double z) {
-            return new Vector3d (x, z, -y);
+            return new Vector3d (y, z, x);
         }
 
         #region Vector3k
@@ -34,7 +34,7 @@ namespace PokesYou.CMath {
         /// <param name="vec"></param>
         /// <returns></returns>
         public static Vector3 ToGLVec3 (this Vector3k vec) {
-            return new Vector3 ((float) vec.X, (float) vec.Z, (float) -vec.Y);
+            return new Vector3 ((float) vec.Y, (float) vec.Z, (float) vec.X);
         }
         /// <summary>
         /// Converts correct XYZ coordinates to OpenGL's stupid format
@@ -42,7 +42,7 @@ namespace PokesYou.CMath {
         /// <param name="vec"></param>
         /// <returns></returns>
         public static Vector3d ToGLVec3d (this Vector3k vec) {
-            return new Vector3d ((double) vec.X, (double) vec.Z, (double) -vec.Y);
+            return new Vector3d ((double) vec.Y, (double) vec.Z, (double) vec.X);
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace PokesYou.CMath {
         /// <param name="vec"></param>
         /// <returns></returns>
         public static Vector3 ToGLVec3 (this Vector3 vec) {
-            return new Vector3 (vec.X, vec.Z, -vec.Y);
+            return new Vector3 (vec.Y, vec.Z, vec.X);
         }
         /// <summary>
         /// Converts correct XYZ coordinates to OpenGL's stupid format
@@ -78,7 +78,7 @@ namespace PokesYou.CMath {
         /// <param name="vec"></param>
         /// <returns></returns>
         public static Vector3d ToGLVec3d (this Vector3 vec) {
-            return new Vector3d (vec.X, vec.Z, -vec.Y);
+            return new Vector3d (vec.Y, vec.Z, vec.X);
         }
 
         /// <summary>
@@ -98,7 +98,7 @@ namespace PokesYou.CMath {
         /// <param name="vec"></param>
         /// <returns></returns>
         public static Vector3 ToGLVec3 (this Vector3d vec) {
-            return new Vector3 ((float) vec.X, (float) vec.Z, (float) -vec.Y);
+            return new Vector3 ((float) vec.Y, (float) vec.Z, (float) vec.X);
         }
         /// <summary>
         /// Converts correct XYZ coordinates to OpenGL's stupid format
@@ -106,7 +106,7 @@ namespace PokesYou.CMath {
         /// <param name="vec"></param>
         /// <returns></returns>
         public static Vector3d ToGLVec3d (this Vector3d vec) {
-            return new Vector3d (vec.X, vec.Z, -vec.Y);
+            return new Vector3d (vec.Y, vec.Z, vec.X);
         }
 
         /// <summary>
