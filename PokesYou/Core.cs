@@ -95,14 +95,14 @@ namespace PokesYou {
             }
 
             try {
-                Data.UDMF.UDMFParser udmfParser = new Data.UDMF.UDMFParser ();
+                /*Data.UDMF.UDMFParser udmfParser = new Data.UDMF.UDMFParser ();
                 udmfParser.Setup ();
 
                 using (var reader = new StreamReader ("TEXTMAP.txt"))
                     udmfParser.Parse (reader);
 
                 Console.ReadKey ();
-                return;
+                return;*/
 
                 GConsole.WriteLine ("Core: Loading engine.PK3");
                 ZipLumpContainer container = null;

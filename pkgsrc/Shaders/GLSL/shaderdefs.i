@@ -7,16 +7,9 @@ precision highp float;
 
 // Constants
 const int LIGHTTYPE_Point = 1;
+const int LIGHTTYPE_Directional = 2;
 
 // Structs
-struct DirLight_t {
-    vec3 direction;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};
-
 struct Light_t {
     int lightType;
     vec3 position, direction;
@@ -30,8 +23,7 @@ struct Light_t {
 uniform vec3 uCameraPos; // Camera data
 uniform vec3 uCameraDir;
 
-uniform DirLight_t dirLight; // Lights data
-uniform Light_t lights [MAX_LIGHTS];
+uniform Light_t lights [MAX_LIGHTS]; // Lights data
 
 uniform sampler2D matDiffuse1; // Material data
 uniform sampler2D matDiffuse2;

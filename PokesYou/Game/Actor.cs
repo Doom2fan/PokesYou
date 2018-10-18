@@ -19,6 +19,10 @@ namespace PokesYou.Game {
         /// It can still interact with other things, but only as the instigator (missiles will run into other things, but nothing can run into a missile)
         /// </summary>
         NoBlockmap    = 1 << 4,
+        /// <summary>
+        /// The actor isn't affected by gravity
+        /// </summary>
+        NoGravity     = 1 << 4,
     }
     public class ActorState {
         public IRotationSet RotationSet { get; set; }
@@ -542,7 +546,7 @@ namespace PokesYou.Game {
                 this.Destroy ();
             }
 
-            if (gravity > 0 && bCylinder.Z > 0)
+            if (!flags.HasFlag (ActorFlags.NoGravity) && gravity > 0 && bCylinder.Z > 0)
                 vel.Z -= ((flags & ActorFlags.NoInteraction) == ActorFlags.NoInteraction) ? GetLocalGravity () : GetGravity ();
 
             prevPos = bCylinder.Position;
@@ -722,7 +726,7 @@ namespace PokesYou.Game {
         protected virtual bool SpecialCollisionResponseZ (bool performResponse, Actor actorCollided, bool firstCollision = false) { return false; }
         #endregion
 
-        static readonly Accum _friction = Accum.MakeAccum (0x0000E800);
+        static readonly Accum _friction = Accum.MakeAccum (0x00000000);//0x0000E800);
         public virtual Accum GetFriction () { return FixedMath.Clamp (_friction, Accum.Zero, Accum.One); }
 
         public virtual Accum GetGravity () { return gravity * Constants.BaseGravity; } // Right now these are the exact same, but will be different when level geometry is added

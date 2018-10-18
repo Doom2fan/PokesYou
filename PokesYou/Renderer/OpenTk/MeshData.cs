@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace PokesYou.Renderer.OpenTk.Internal {
+    [StructLayout (LayoutKind.Sequential, Pack=0)]
     struct MeshVertex {
         public Vector3 Position;
         public Vector3 Normal;
@@ -49,6 +50,7 @@ namespace PokesYou.Renderer.OpenTk.Internal {
             // Draw mesh
             GL.BindVertexArray (VAO);
             GL.DrawElements (BeginMode.Triangles, Indices.Length, DrawElementsType.UnsignedInt, 0);
+            GL.BindVertexArray (0);
         }
 
         private int VAO, VBO, EBO;
@@ -74,9 +76,11 @@ namespace PokesYou.Renderer.OpenTk.Internal {
             // Vertex normals
             GL.EnableVertexAttribArray (1);
             GL.VertexAttribPointer (1, 3, VertexAttribPointerType.Float, false, vertexSize, Marshal.OffsetOf (typeof (MeshVertex), "Normal"));
-            // Vertex normals
+            // Texture coordinates
             GL.EnableVertexAttribArray (2);
             GL.VertexAttribPointer (2, 2, VertexAttribPointerType.Float, false, vertexSize, Marshal.OffsetOf (typeof (MeshVertex), "TexCoords"));
+
+            GL.BindVertexArray (0);
         }
     }
 }

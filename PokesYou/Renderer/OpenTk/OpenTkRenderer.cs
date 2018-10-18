@@ -12,7 +12,7 @@ using PokesYou.CMath;
 
 namespace PokesYou.Renderer.OpenTk {
     public class OpenTkRenderer : GameWindow, IRenderEngine {
-        public static readonly OpenTkRenderer Default = new OpenTkRenderer (800, 600, GraphicsMode.Default, "PokesYou", GameWindowFlags.Default, DisplayDevice.Default, 3, 1, GraphicsContextFlags.ForwardCompatible);
+        public static readonly OpenTkRenderer Default = new OpenTkRenderer (800, 600, GraphicsMode.Default, "PokesYou", GameWindowFlags.Default, DisplayDevice.Default, 3, 3, GraphicsContextFlags.ForwardCompatible);
 
         protected internal Camera localCamera { get; set; }
         Matrix4 projectionMatrix;
@@ -88,24 +88,23 @@ namespace PokesYou.Renderer.OpenTk {
 
             this.MakeCurrent ();
             GL.ClearColor (Color.MidnightBlue);  // Set options
-            GL.ClearDepth (1.0f);
+            /*GL.ClearDepth (1.0f);
             GL.DepthFunc (DepthFunction.Less);
             GL.BlendFunc (BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
-            GL.AlphaFunc (AlphaFunction.Gequal, 0.5f);
+            GL.AlphaFunc (AlphaFunction.Gequal, 0.5f);*/
 
             GL.Enable (EnableCap.DepthTest); // Enable capabilities
-            GL.Enable (EnableCap.AlphaTest);
-            //GL.Enable (EnableCap.CullFace);
-            GL.Enable (EnableCap.Blend);
+            //GL.Enable (EnableCap.AlphaTest);
+            GL.Enable (EnableCap.CullFace);
+            //GL.Enable (EnableCap.Blend);
             // Enable lighting
             //GL.Enable (EnableCap.Lighting);
             //GL.Enable (EnableCap.Texture2D);
 
 
-            ///shader = new Shader (@"Shaders\GLSL\default.vert", @"Shaders\GLSL\default.frag");
-            shader = new Shader (@"Shaders\GLSL\test.vert", @"Shaders\GLSL\test.frag");
+            shader = new Shader (@"Shaders\GLSL\default.vert", @"Shaders\GLSL\default.frag");
 
-            nanosuit = Model.LoadModel (@"models\nanosuit.obj");
+            nanosuit = Model.LoadModel (@"models\nanosuit.dae");
         }
 
         protected override void OnResize (EventArgs e) {
@@ -118,7 +117,7 @@ namespace PokesYou.Renderer.OpenTk {
 
         protected override void OnUnload (EventArgs e) {
         }
-        
+
         public void Render (long ticDelta) {
             EnsureUsable ();
             if (!Exists || IsExiting)
@@ -135,9 +134,9 @@ namespace PokesYou.Renderer.OpenTk {
             this.MakeCurrent ();
 
             GL.Clear (ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            
+
             shader.Use ();
-            
+
             Vector3 cameraPos = localCamera.Position.ToGLVec3 ();
 
             float yaw = MathHelper.DegreesToRadians ((float) localCamera.Angle), pitch = MathHelper.DegreesToRadians (MathHelper.Clamp ((float) localCamera.Pitch, -89.9f, 89.9f));
@@ -148,28 +147,36 @@ namespace PokesYou.Renderer.OpenTk {
             Vector3 cameraFront = Vector3.Transform (new Vector3 (1.0f, 0.0f, 0.0f), cameraFrontMatrix).Normalized ();
             Vector3 cameraUp = new Vector3 (0.0f, 1.0f, 0.0f);
             Matrix4 view = Matrix4.LookAt (cameraPos, cameraPos + cameraFront, cameraUp);
-            
+
             Matrix4 model = Matrix4.Identity;
-            model *= Matrix4.CreateTranslation (0.0f, 0.0f, 2.0f);
-            model *= Matrix4.CreateScale (0.25f, 0.25f, 0.25f);
+            /*model *= Matrix4.CreateTranslation (0.0f, 0.0f, 2.0f);
+            model *= Matrix4.CreateScale (0.25f, 0.25f, 0.25f);*/
+
+            Matrix3 modelNormal = new Matrix3 (model);
+            modelNormal.Invert ();
+            modelNormal.Transpose ();
 
             shader.Use ();
             shader.SetMatrix ("ViewMatrix", view, false);
             shader.SetMatrix ("ProjectionMatrix", projectionMatrix, false);
-            shader.SetMatrix ("ViewMatrix", model, false);
+            shader.SetMatrix ("ModelMatrix", model, false);
+            shader.SetMatrix ("NormalModelMatrix", modelNormal, false);
 
             shader.SetVector3 ("uCameraPos", cameraPos);
             shader.SetVector3 ("uCameraDir", cameraFront);
 
-            shader.SetVector3 ("dirLight.direction", -0.2f, -1.0f, -0.3f);
-            shader.SetVector3 ("dirLight.ambient", 0.05f, 0.05f, 0.05f);
-            shader.SetVector3 ("dirLight.diffuse",  0.4f,  0.4f,  0.4f);
-            shader.SetVector3 ("dirLight.specular", 0.5f,  0.5f,  0.5f);
+            shader.SetInt ("lights[0].lightType", 2);
+            shader.SetVector3 ("lights[0].direction", -0.2f, -1.0f, -0.3f);
+            shader.SetVector3 ("lights[0].ambient", 0.05f, 0.05f, 0.05f);
+            shader.SetVector3 ("lights[0].diffuse", 0.75f, 0.75f, 0.75f);
+            shader.SetVector3 ("lights[0].specular", 0.5f, 0.5f, 0.5f);
+
+            shader.SetFloat ("matShininess", 32.0f);
 
             nanosuit.Draw (shader);
 
-            /*this.ProcessGeometry ();
-            this.ProcessActors ();*/
+            //this.ProcessGeometry ();
+            //this.ProcessActors ();
 
             this.SwapBuffers ();
         }

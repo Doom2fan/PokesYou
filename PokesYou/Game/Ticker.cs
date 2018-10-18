@@ -45,6 +45,8 @@ namespace PokesYou.Game {
             pawn.SetHeight (new Accum (56), false);
             pawn.SetRadius (new Accum (16), false);
             pawn.Camera.ViewHeight = new Accum (48);
+            pawn.SetPosition (new CMath.Vector3k (new Accum (0), new Accum (0), new Accum (12)));
+            pawn.SetFlags (ActorFlags.NoGravity);
 
             LocalPlayer = new Player ();
             LocalPlayer.ControlInterface = new PlayerControl ();
@@ -59,7 +61,7 @@ namespace PokesYou.Game {
             actor.SetHeight (new Accum (56), false);
             actor.SetRadius (new Accum (16), false);
             actor.SetPosition (new CMath.Vector3k (new Accum (0), new Accum (150), new Accum (0)));
-            //actor.AddThinker ();
+            actor.AddThinker ();
 
             actor = new Actor (state);
             actor.SetMaxHealth (100);
