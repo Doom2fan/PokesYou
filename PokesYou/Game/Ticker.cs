@@ -16,18 +16,12 @@ namespace PokesYou.Game {
     }
 
     public class Ticker : ITicker {
-        Player [] playerList = new Player [32];
-        ThinkerEnumerator thinkers = new ThinkerEnumerator (null);
-
         public Player LocalPlayer { get; set; }
-        public Player [] Players {
-            get { return playerList; }
-            set { playerList = value; }
-        }
-        public ThinkerEnumerator Thinkers { get { return thinkers; } }
+        public Player [] Players { get; set; } = new Player [32];
+        public ThinkerEnumerator Thinkers { get; } = new ThinkerEnumerator (null);
 
         public void Initialize () {
-            ActorState state = new ActorState ();
+            var state = new ActorState ();
             state.Tics = 1; state.Next = state; state.Prev = state;
             state.RotationSet = new RotationSet (new Sprite [] {
                 new Sprite (TextureManager.LoadTexture ("PLAYA1", false), System.Drawing.Color.White, new OpenTK.Vector2 (12, 56), 0, 0, 0, OpenTK.Vector2.One, Renderer.Billboarding.Both),
@@ -40,7 +34,7 @@ namespace PokesYou.Game {
                 new Sprite (TextureManager.LoadTexture ("PLAYA8", false), System.Drawing.Color.White, new OpenTK.Vector2 (21, 55), 0, 0, 0, OpenTK.Vector2.One, Renderer.Billboarding.Both),
             });
 
-            PlayerPawn pawn = new PlayerPawn (state);
+            var pawn = new PlayerPawn (state);
             pawn.SetMaxHealth (100);
             pawn.SetHeight (new Accum (56), false);
             pawn.SetRadius (new Accum (16), false);
@@ -52,11 +46,11 @@ namespace PokesYou.Game {
             LocalPlayer.ControlInterface = new PlayerControl ();
             LocalPlayer.Pawn = pawn;
             pawn.Player = LocalPlayer;
-            playerList [0] = LocalPlayer;
+            Players [0] = LocalPlayer;
 
             pawn.AddThinker ();
 
-            Actor actor = new Actor (state);
+            var actor = new Actor (state);
             actor.SetMaxHealth (100);
             actor.SetHeight (new Accum (56), false);
             actor.SetRadius (new Accum (16), false);
@@ -88,27 +82,27 @@ namespace PokesYou.Game {
             LocalPlayer.ControlInterface.YawDelta = new Accum (Input.TotalYawDelta);
             LocalPlayer.ControlInterface.PitchDelta = new Accum (Input.TotalPitchDelta);
 
-            foreach (Player player in playerList) {
+            foreach (Player player in Players) {
                 if (player == null)
                     break;
 
                 player.Tick ();
             }
 
-            foreach (IThinker thinker in thinkers)
+            foreach (IThinker thinker in Thinkers)
                 thinker.Tick ();
         }
 
         public void AddThinker (IThinker thinker) {
-            if (thinkers.First == null) {
+            if (Thinkers.First == null) {
                 thinker.PrevThinker = null;
                 thinker.NextThinker = null;
-                thinkers.SetFirst (thinker);
+                Thinkers.SetFirst (thinker);
             } else {
                 thinker.PrevThinker = null;
-                thinker.NextThinker = thinkers.First;
-                thinkers.First.PrevThinker = thinker;
-                thinkers.SetFirst (thinker);
+                thinker.NextThinker = Thinkers.First;
+                Thinkers.First.PrevThinker = thinker;
+                Thinkers.SetFirst (thinker);
             }
         }
         public void RemoveThinker (IThinker thinker) {

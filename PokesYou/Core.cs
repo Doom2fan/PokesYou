@@ -13,15 +13,13 @@ using System.IO;
 
 namespace PokesYou {
     public static class Core {
-        private static ITicker game;
-        private static IRenderEngine renderer;
         private static Stopwatch ticClock;
         private static Stopwatch renderClock;
         private static Stopwatch fpsClock;
-        private static bool Closing = false;
+        private static bool closing = false;
         private static CmdLineOpts options;
-        public static ITicker Ticker { get { return game; } }
-        public static IRenderEngine RenderEngine { get { return renderer; } }
+        public static ITicker Ticker { get; private set; }
+        public static IRenderEngine RenderEngine { get; private set; }
 
         static Core () {
             GConsole.Debug.WriteLine ("Core: Constructing PokesYou.Core");
@@ -31,7 +29,7 @@ namespace PokesYou {
             options = new CmdLineOpts ();
         }
 
-        public static void Exit () { Closing = true; }
+        public static void Exit () { closing = true; }
 
         public static double GetTicTimeFrac () { return MathHelper.Clamp (ticClock.ElapsedMilliseconds / Constants.MsecsPerTic, 0d, 1d); }
         public static Accum GetTicTimeFracAccum () { return FixedMath.Clamp (new Accum (ticClock.ElapsedMilliseconds) / new Accum (Constants.MsecsPerTic), Accum.Zero, Accum.One); }
@@ -69,13 +67,13 @@ namespace PokesYou {
                     GConsole.WriteLine (" Adding \"{0}\", {1} lumps", file, container.Count);
                     LumpManager.AddContainer (container);
                 } else
-                    throw new FatalError (String.Format ("Could not identify patch {0}. Stopping execution.", file));
+                    throw new FatalError (string.Format ("Could not identify patch {0}. Stopping execution.", file));
             }
         }
 
         private static void DisposeResources () {
-            if (renderer != null)
-                renderer.Dispose ();
+            if (RenderEngine != null)
+                RenderEngine.Dispose ();
 
             // Just to be sure.
             ticClock.Reset (); renderClock.Reset (); fpsClock.Reset ();
@@ -83,9 +81,9 @@ namespace PokesYou {
 
         public static void Run (string [] args) {
             long ticDelta = 0, renderDelta = 0;
-            double fpsTime, estimatedFPS = 0;
+            double fpsTime;
 
-            if (Closing)
+            if (closing)
                 return;
             
             if (!CommandLine.Parser.Default.ParseArguments (args, options)) {
@@ -126,13 +124,13 @@ namespace PokesYou {
                 FixedMath.GenerateTables ();
 
                 GConsole.WriteLine ("Core: Initializing video");
-                renderer = OpenTkRenderer.Default;
-                renderer.Initialize (800, 600, false);
-                renderer.OnFocusChange += Renderer_OnFocusChange;
+                RenderEngine = OpenTkRenderer.Default;
+                RenderEngine.Initialize (800, 600, false);
+                RenderEngine.OnFocusChange += Renderer_OnFocusChange;
 
                 GConsole.WriteLine ("Core: Initializing playsim");
-                game = new Ticker ();
-                game.Initialize ();
+                Ticker = new Ticker ();
+                Ticker.Initialize ();
 
                 GConsole.WriteLine ("Core: Starting game loop");
                 ticClock.Reset ();
@@ -141,13 +139,13 @@ namespace PokesYou {
                 renderClock.Start ();
 
                 while (true) {
-                    if (Closing)
+                    if (closing)
                         return;
 
                     if (ticClock.ElapsedMilliseconds >= Constants.MsecsPerTic) {
                         ticDelta = ticClock.ElapsedMilliseconds;
                         ticClock.Restart ();
-                        game.Update (ticDelta);
+                        Ticker.Update (ticDelta);
                         Input.ClearTotals ();
                     }
                     Input.UpdateInput ();
@@ -156,11 +154,11 @@ namespace PokesYou {
                     renderClock.Restart ();
 
                     fpsClock.Restart ();
-                    renderer.Render (renderDelta);
+                    RenderEngine.Render (renderDelta);
                     fpsTime = fpsClock.ElapsedMilliseconds;
 
-                    if (renderer.IsUsable ())
-                        renderer.WindowTitle = String.Format ("Frame time: {0} ms", fpsTime);
+                    if (RenderEngine.IsUsable ())
+                        RenderEngine.WindowTitle = String.Format ("Frame time: {0} ms", fpsTime);
                 }
             } catch (FatalError err) {
                 DisposeResources ();
