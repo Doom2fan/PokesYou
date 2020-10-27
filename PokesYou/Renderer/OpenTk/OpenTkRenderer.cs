@@ -144,7 +144,7 @@ namespace PokesYou.Renderer.OpenTk {
             cameraFrontMatrix *= Matrix4.CreateRotationZ (pitch);
             cameraFrontMatrix *= Matrix4.CreateRotationY (yaw);
 
-            Vector3 cameraFront = Vector3.Transform (new Vector3 (1.0f, 0.0f, 0.0f), cameraFrontMatrix).Normalized ();
+            Vector3 cameraFront = Vector4.Transform (new Vector4 (1.0f, 0.0f, 0.0f, 1.0f), cameraFrontMatrix).Normalized ().Xyz;
             Vector3 cameraUp = new Vector3 (0.0f, 1.0f, 0.0f);
             Matrix4 view = Matrix4.LookAt (cameraPos, cameraPos + cameraFront, cameraUp);
 
